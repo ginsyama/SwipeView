@@ -15,6 +15,7 @@ import android.widget.Scroller;
 public class SwipeView extends FrameLayout implements OnTouchListener{
     private View mBackgroundView;
     private View mForegroundView;
+    private FlingRunnable mFlingRunnable;
     private GestureDetector mGestureDetector;
     private static final String TAG = SwipeView.class.getSimpleName();
     private FrameLayout.LayoutParams params;
@@ -22,7 +23,6 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
         params = new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
     }
-    private FlingRunnable runnable = new FlingRunnable();
     
     public SwipeView(Context context) {
         this(context, null);
@@ -40,6 +40,7 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
         mForegroundView = createForegroudView();
         mBackgroundView.setBackgroundColor(Color.BLUE);
         mForegroundView.setBackgroundColor(Color.CYAN);
+        mFlingRunnable   = new FlingRunnable();
         mGestureDetector = new GestureDetector(getContext(), onGestureListener);
         addView(mBackgroundView, params);
         addView(mForegroundView, params);
@@ -85,7 +86,10 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
                 float distanceY) {
             Log.d(TAG, "onScroll");
-            runnable.startScroll((int) distanceX);
+            Log.d(TAG, "distanceX : " + distanceX + " distanceY : " + distanceY);
+            if(-8 < distanceY && distanceY < 8){
+                mFlingRunnable.startScroll( (int) mForegroundView.getX(), (int) distanceX);
+            }
             return false;
         }
         
@@ -115,7 +119,12 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
             mScroller = new Scroller(getContext());
         }
         
-        public void startScroll(int dx){
+        private void startCommon(){
+            removeCallbacks(this);
+        }
+        
+        public void startScroll( int startX, int dx){
+            startCommon();
             mScroller.startScroll( 0, 0, dx, 0);
             post(this);
         }
@@ -123,9 +132,19 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
         @Override
         public void run() {
             if(mScroller.computeScrollOffset()){
-                Log.d(TAG, "getCurrX" + mScroller.getCurrX());
-                mForegroundView.scrollTo( mScroller.getCurrX(), 0);
-                invalidate();
+                int distanceX = mScroller.getCurrX();
+                Log.d(TAG, "getCurrX : " + mScroller.getCurrX());
+                int x = (int) mForegroundView.getX(); //X座標
+                int y = (int) mForegroundView.getY(); //Y座標
+                Log.d(TAG, "x : " + x);
+                
+                if( x - distanceX < -200) {
+                    mScroller.isFinished();
+                    return;
+                }
+                int heiht = mForegroundView.getHeight();
+                mForegroundView.layout( x - distanceX, y, x + SwipeView.this.getWidth() - distanceX, y + heiht);
+
                 post(this);
             }
         }
