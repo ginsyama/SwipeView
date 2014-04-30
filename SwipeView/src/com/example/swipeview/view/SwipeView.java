@@ -58,8 +58,6 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         
         final int width = MeasureSpec.getSize(widthMeasureSpec);
         final int height = MeasureSpec.getSize(heightMeasureSpec);
@@ -70,9 +68,9 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
         for(int i = 0; i < childCount; i++){
             View view = getChildAt(i);
             
-            final int widthMeasure = MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY);
-            final int heightMeasure = MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY);
-            view.measure(widthMeasureSpec, heightMeasureSpec);
+            final int widthMeasure = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
+            final int heightMeasure = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+            view.measure(widthMeasure, heightMeasure);
         }
     }
 
@@ -108,7 +106,14 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         Log.d(TAG, "onTouch");
-        mGestureDetector.onTouchEvent(event);
+        if(event.getAction() == MotionEvent.ACTION_UP){
+            Log.d(TAG, "onTouch Action_UP");
+            final int startX = (int) mForegroundView.getX();
+            final int dx = -startX;
+            mFlingRunnable.startScroll(startX, dx);
+        }else{
+            mGestureDetector.onTouchEvent(event);
+        }
         return false;
     }
 
@@ -177,7 +182,7 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
         public void startScroll( int startX, int dx){
             startCommon();
             Log.d(TAG, "移動量 : " + dx);
-            mScroller.startScroll( 0, 0, dx, 0);
+            mScroller.startScroll( startX, 0, dx, 0);
             post(this);
         }
         
@@ -199,7 +204,7 @@ public class SwipeView extends FrameLayout implements OnTouchListener{
                 
                 Log.d(TAG, "left : " + left + " top : " + top + " right : " + right + " bottom : " + bottom);
                 mForegroundView.layout( left, top, right, bottom);
-                post(this);
+                postDelayed( this, 10);
             }
         }
         
